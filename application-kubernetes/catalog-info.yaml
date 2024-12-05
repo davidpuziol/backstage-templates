@@ -1,0 +1,49 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: app-helm
+  title: Preencher Valores para Aplicação Helm
+  description: Preenche os valores de configuração do Helm Chart para a aplicação no Kubernetes
+spec:
+  owner: team-platform
+  type: application
+  parameters:
+    - title: Nome do App
+      required: true
+      type: string
+      description: Nome do aplicativo
+
+    - title: Nome do Cluster
+      required: true
+      type: enum
+      description: Nome do cluster Kubernetes
+      enum:
+        - 'https://kubernetes.default.svc'
+        - cluster2
+        - cluster3
+        - cluster4
+
+    - title: Nome do Namespace
+      required: true
+      type: string
+      description: Namespace onde o aplicativo será implantado
+
+
+  steps:
+    - name: Preencher valores do Helm Chart
+      action: backstage:helm-template
+      input:
+        chartPath: ./charts/{{parameters.title}}  # Usando o nome do app para localizar o chart
+        values:
+          appName: {{parameters.title}}           # Substitui o nome da aplicação no values.yaml
+          namespace: {{parameters.namespace}}     # Substitui o namespace
+          cluster: {{parameters.cluster}}         # Usará o valor escolhido para o cluster
+        output: ./output-directory               # Onde o resultado será armazenado
+
+
+    - name: Sincronizar com ArgoCD
+      action: backstage:run-argo-cd-sync
+      input:
+        appName: {{parameters.title}}
+        namespace: {{parameters.namespace}}
+        chart: {{parameters.chart}}
